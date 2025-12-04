@@ -72,7 +72,7 @@ def MOUNT():
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     os.system(f"""cd /mnt/gentoo/ && echo ''MAKEOPTS="-j{MAKEOPTS_J} -l{MAKEOPTS_L}"' >> /etc/portage/make.conf""")
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
-    os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo /usr/bin/python3 /root/in-chroot.py")
+    os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo python3 in-chroot.py")
 
 
 MOUNT()
