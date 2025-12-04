@@ -66,13 +66,20 @@ partition()
 
 def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
+    print("Made parent directory: [/mnt/gentoo]")
     os.system(f"mount {ROOTPT} /mnt/gentoo")
+    print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
     os.system(f"cd /mnt/gentoo && wget {BASE_URL}{PROFILE}")
+    print(f"Ran wget {BASE_URL}{PROFILE}")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
+    print("Checking the content of the tarball.... finished")
     os.system(f"""cd /mnt/gentoo/ && echo ''MAKEOPTS="-j{MAKEOPTS_J} -l{MAKEOPTS_L}"' >> /etc/portage/make.conf""")
+    print("MAKEOPTS set up.")
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
+    print("Successfully copied [etc/resol.conf] to [/mnt/gentoo/etc]")
     os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo python3 in-chroot.py")
+    print("Chroot successful!")
 
 
 MOUNT()
