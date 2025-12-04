@@ -57,8 +57,7 @@ def MOUNT():
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
     os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo /usr/bin/python3 /root/in-chroot.py")
 
-
-
+MOUNT()
 
 def require_root():
     if os.geteuid() != 0:
