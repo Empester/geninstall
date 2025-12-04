@@ -12,15 +12,6 @@ HOSTNAME = "gentoo"
 USERNAME = "deutchhd"
 
 
-
-# def MOUNT():
-#     os.system("mkdir -p /mnt/gentoo")
-#     os.system(f"mount {ROOTPT} /mnt/gentoo")
-#     os.system(f"cd /mnt/gentoo && wget {PROFILE}")
-#     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
-#     os.system(f"""cd /mnt/gentoo/ && echo ''MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf""")
-#     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
-#     os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo /usr/bin/python3 /root/in-chroot.py")
 hosts = f"""
 # /etc/hosts: Local Host Database
 #
