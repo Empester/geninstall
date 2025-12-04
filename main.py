@@ -78,7 +78,7 @@ def MOUNT():
     print("MAKEOPTS set up.")
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
     print("Successfully copied [etc/resol.conf] to [/mnt/gentoo/etc]")
-    os.system("cd /mnt/gentoo && mv in-chroot.py /mnt/gentoo/ && arch-chroot /mnt/gentoo python in-chroot.py")
+    os.system("cd /mnt/gentoo && mv in-chroot.py /mnt/gentoo/ && arch-chroot /mnt/gentoo python in_chroot.py")
     print("Chroot successful!")
 
 
