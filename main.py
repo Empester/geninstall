@@ -5,7 +5,7 @@ import re
 ROOTPT = "/dev/vda1"
 EFIPT = "/dev/vda2"
 SWAPPT = "/dev/vda3"
-URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/latest-stage3-amd64-desktop-systemd.txt"
+URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-systemd/latest-stage3-amd64-systemd.txt"
 MAKEOPTS_J = 2 # ex: -j3
 MAKEOPTS_L = 3 # ex: -l4
 
