@@ -1,8 +1,8 @@
 import os
 
-ROOTPT = "/dev/"
-EFIPT = "/dev/"
-SWAPPT = "/dev/"
+ROOTPT = "/dev/vda1"
+EFIPT = "/dev/vda2"
+SWAPPT = "/dev/vda3"
 PROFILE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd-desktop/"
 PROFILENR = 2  # 8 for default/linux/amd64/23.0/desktop/plasma/systemd
 CONTINENT = "Europe"
