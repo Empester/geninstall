@@ -1,0 +1,278 @@
+import os
+
+ROOTPT = "/dev/"
+EFIPT = "/dev/"
+SWAPPT = "/dev/"
+PROFILE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd-desktop/"
+PROFILENR = 2  # 8 for default/linux/amd64/23.0/desktop/plasma/systemd
+CONTINENT = "Europe"
+CAPITAL = "Bucharest"
+HOSTNAME = "gentoo"
+USERNAME = "deutchhd"
+
+
+
+# def MOUNT():
+#     os.system("mkdir -p /mnt/gentoo")
+#     os.system(f"mount {ROOTPT} /mnt/gentoo")
+#     os.system(f"cd /mnt/gentoo && wget {PROFILE}")
+#     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
+#     os.system(f"""cd /mnt/gentoo/ && echo ''MAKEOPTS="-j4 -l4"' >> /etc/portage/make.conf""")
+#     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
+#     os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo /usr/bin/python3 /root/in-chroot.py")
+hosts = f"""
+# /etc/hosts: Local Host Database
+#
+# This file describes a number of aliases-to-address mappings for the for
+# local hosts that share this file.
+#
+# The format of lines in this file is:
+#
+# IP_ADDRESS	canonical_hostname	[aliases...]
+#
+#The fields can be separated by any number of spaces or tabs.
+#
+# In the presence of the domain name service or NIS, this file may not be
+# consulted at all; see /etc/host.conf for the resolution order.
+#
+
+# IPv4 and IPv6 localhost aliases
+127.0.0.1	localhost
+::1		localhost
+127.0.0.1   {HOSTNAME}
+
+#
+# Imaginary network.
+#10.0.0.2               myname
+#10.0.0.3               myfriend
+#
+# According to RFC 1918, you can use the following IP networks for private
+# nets which will never be connected to the Internet:
+#
+#       10.0.0.0        -   10.255.255.255
+#       172.16.0.0      -   172.31.255.255
+#       192.168.0.0     -   192.168.255.255
+#
+# In case you want to be able to connect directly to the Internet (i.e. not
+# behind a NAT, ADSL router, etc...), you need real official assigned
+# numbers.  Do not try to invent your own network numbers but instead get one
+# from your network provider (if any) or from your regional registry (ARIN,
+# APNIC, LACNIC, RIPE NCC, or AfriNIC.)
+#
+"""
+
+
+def CRITICALS():
+    os.system("mkdir -p boot/efi")
+    os.system(f"mount /dev/{EFIPT} boot/efi")
+    print("Syncing the system...")
+    os.system("emerge-webrsync")
+    os.system("emerge -q --oneshot app-portage/mirrorselect")
+    print("Selecting mirrors...")
+    os.system("mirrorselect -i -o >> /etc/portage/make.conf")
+    print("Resyncing quietly...")
+    os.system("emerge --sync --quiet")
+    print("Selecting profile...")
+    os.system(f"eselect profile {PROFILENR}")
+    print("Upgrading system...")
+    os.system("emerge --ask --verbose --update --deep --changed-use @world")
+    print("Configuring zoneinfo...")
+    os.system(f"ln -sf ../usr/share/zoneinfo/{CONTINENT}/{CAPITAL} /etc/localtime")
+    print("Configuring locale...")
+    os.system("""echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen""")
+    os.system("locale-gen")
+    os.system("eselect locale list")
+    locale_nr = int(input("Select your locale from the list!: "))
+    locale_selection = locale_nr
+    print(f"Continuing with locale selected: {locale_selection}...")
+    os.system(f"eselect locale set {locale_selection}")
+    os.system("env-update")
+    os.system("source /etc/profile")  
+    os.system("""
+    echo "sys-kernel/linux-firmware @BINARY-REDISTRIBUTABLE" >> /etc/portage/package.license
+    """)
+    os.system("emerge --ask sys-kernel/linux-firmware")    
+    os.system("emerge --ask sys-firmware/sof-firmware")
+    os.system("emerge --ask sys-firmware/intel-microcode")
+    os.system("""
+    echo "sys-kernel/installkernel systemd dracut grub" >> /etc/portage/package.use/installkernel
+    """)
+    os.system("emerge --ask sys-kernel/gentoo-kernel-bin")
+    os.system("emerge --ask dev-vcs/git sys-devel/make")
+    os.system("git clone https://codeberg.org/coast/cfstabgen.git")
+    os.system("cd cfstabgen")
+    os.system("make && make install")
+    os.system("cfstabgen -U / >> /etc/fstab")
+    os.system(f"echo {HOSTNAME} > /etc/hostname")
+    os.system("emerge --ask net-misc/dhcpcd")
+    os.system("systemctl enable dhcpcd")
+    os.system(f"{hosts} > /etc/hosts")
+    os.system("passwd")
+    print("Your root password has been set!")
+    os.system(f"useradd -m -G users,wheel,audio,video -s /bin/bash {USERNAME}")
+    os.system(f"passwd {USERNAME}")
+    print("Your user password has been set!")
+
+    sudo_config = """
+    ## sudoers file.
+    ##
+    ## This file MUST be edited with the 'visudo' command as root.
+    ## Failure to use 'visudo' may result in syntax or file permission errors
+    ## that prevent sudo from running.
+    ##
+    ## See the sudoers man page for the details on how to write a sudoers file.
+    ##
+
+    ##
+    ## Host alias specification
+    ##
+    ## Groups of machines. These may include host names (optionally with wildcards),
+    ## IP addresses, network numbers or netgroups.
+    # Host_Alias	WEBSERVERS = www1, www2, www3
+
+    ##
+    ## User alias specification
+    ##
+    ## Groups of users.  These may consist of user names, uids, Unix groups,
+    ## or netgroups.
+    # User_Alias	ADMINS = millert, dowdy, mikef
+
+    ##
+    ## Cmnd alias specification
+    ##
+    ## Groups of commands.  Often used to group related commands together.
+    # Cmnd_Alias	PROCESSES = /usr/bin/nice, /bin/kill, /usr/bin/renice, \
+    # 			   /usr/bin/pkill, /usr/bin/top
+    #
+    # Cmnd_Alias	REBOOT = /sbin/halt, /sbin/reboot, /sbin/poweroff
+    #
+    # Cmnd_Alias	DEBUGGERS = /usr/bin/gdb, /usr/bin/lldb, /usr/bin/strace, \
+    # 			   /usr/bin/truss, /usr/bin/bpftrace, \
+    # 			   /usr/bin/dtrace, /usr/bin/dtruss
+    #
+    # Cmnd_Alias	PKGMAN = /usr/bin/apt, /usr/bin/dpkg, /usr/bin/rpm, \
+    # 			/usr/bin/yum, /usr/bin/dnf,  /usr/bin/zypper, \
+    # 			/usr/bin/pacman
+
+    ##
+    ## Defaults specification
+    ##
+    ## Preserve editor environment variables for visudo.
+    ## To preserve these for all commands, remove the "!visudo" qualifier.
+    Defaults!/usr/sbin/visudo env_keep += "SUDO_EDITOR EDITOR VISUAL"
+    ##
+    ## Use a hard-coded PATH instead of the user's to find commands.
+    ## This also helps prevent poorly written scripts from running
+    ## arbitrary commands under sudo.
+    Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/bin:/usr/lib/llvm/20/bin:/usr/lib/llvm/19/bin:/usr/lib/llvm/18/bin:/usr/lib/llvm/17/bin:/usr/lib/llvm/16/bin:/usr/lib/llvm/15/bin"
+    ##
+    ## You may wish to keep some of the following environment variables
+    ## when running commands via sudo.
+    ##
+    ## Locale settings
+    # Defaults env_keep += "LANG LANGUAGE LINGUAS LC_* _XKB_CHARSET"
+    ##
+    ## Run X applications through sudo; HOME is used to find the
+    ## .Xauthority file.  Note that other programs use HOME to find   
+    ## configuration files and this may lead to privilege escalation!
+    # Defaults env_keep += "HOME"
+    ##
+    ## X11 resource path settings
+    # Defaults env_keep += "XAPPLRESDIR XFILESEARCHPATH XUSERFILESEARCHPATH"
+    ##
+    ## Desktop path settings
+    # Defaults env_keep += "QTDIR KDEDIR"
+    ##
+    ## Allow sudo-run commands to inherit the callers' ConsoleKit session
+    # Defaults env_keep += "XDG_SESSION_COOKIE"
+    ##
+    ## Uncomment to enable special input methods.  Care should be taken as
+    ## this may allow users to subvert the command being run via sudo.
+    # Defaults env_keep += "XMODIFIERS GTK_IM_MODULE QT_IM_MODULE QT_IM_SWITCHER"
+    ##
+    ## Uncomment to disable "use_pty" when running commands as root.
+    ## Commands run as non-root users will run in a pseudo-terminal,
+    ## not the user's own terminal, to prevent command injection.
+    # Defaults>root !use_pty
+    ##
+    ## Uncomment to run commands in the background by default.
+    ## This can be used to prevent sudo from consuming user input while
+    ## a non-interactive command runs if "use_pty" or I/O logging are
+    ## enabled.  Some commands may not run properly in the background.
+    # Defaults exec_background
+    ##
+    ## Uncomment to send mail if the user does not enter the correct password.
+    # Defaults mail_badpass
+    ##
+    ## Uncomment to enable logging of a command's output, except for
+    ## sudoreplay and reboot.  Use sudoreplay to play back logged sessions.
+    ## Sudo will create up to 2,176,782,336 I/O logs before recycling them.
+    ## Set maxseq to a smaller number if you don't have unlimited disk space.
+    # Defaults log_output
+    # Defaults!/usr/bin/sudoreplay !log_output
+    # Defaults!/usr/local/bin/sudoreplay !log_output
+    # Defaults!REBOOT !log_output
+    # Defaults maxseq = 1000
+    ##
+    ## Uncomment to disable intercept and log_subcmds for debuggers and
+    ## tracers.  Otherwise, anything that uses ptrace(2) will be unable
+    ## to run under sudo if intercept_type is set to "trace".
+    # Defaults!DEBUGGERS !intercept, !log_subcmds
+    ##
+    ## Uncomment to disable intercept and log_subcmds for package managers.
+    ## Some package scripts run a huge number of commands, which is made
+    ## slower by these options and also can clutter up the logs.
+    # Defaults!PKGMAN !intercept, !log_subcmds
+    ##
+    ## Uncomment to disable PAM silent mode.  Otherwise messages by PAM
+    ## modules such as pam_faillock will not be printed.
+    # Defaults !pam_silent
+
+    ##
+    ## Runas alias specification
+    ##
+
+    ##
+    ## User privilege specification
+    ##
+    root ALL=(ALL:ALL) ALL
+
+    ## Uncomment to allow members of group wheel to execute any command
+    %wheel ALL=(ALL:ALL) ALL
+    Defaults timestamp_timeout=0
+
+
+    # Preserve environment variables for Wayland
+    Defaults env_keep += "XDG_SESSION_TYPE XDG_RUNTIME_DIR DISPLAY WAYLAND_DISPLAY DBUS_SESSION_BUS_ADDRESS"
+
+
+    ## Same thing without a password
+    # %wheel ALL=(ALL:ALL) NOPASSWD: ALL
+
+    ## Uncomment to allow members of group sudo to execute any command
+    # %sudo ALL=(ALL:ALL) ALL
+
+    ## Uncomment to allow any user to run sudo if they know the password
+    ## of the user they are running the command as (root by default).
+    # Defaults targetpw  # Ask for the password of the target user
+    # ALL ALL=(ALL:ALL) ALL  # WARNING: only use this together with 'Defaults targetpw'
+
+    ## Read drop-in files from /etc/sudoers.d
+    @includedir /etc/sudoers.d
+    """
+
+    os.system("emerge -q sudo")
+    os.system(f"echo {sudo_config} > /etc/sudoers")
+    os.system("emerge --ask net-wireless/iw net-wireless/wpa_supplicant")
+    os.system("""
+    echo 'GRUB_PLATFORMS="efi-64"' >> /etc/portage/make.conf
+    """)
+    os.system("emerge --ask --verbose sys-boot/grub")
+    os.system("grub-install --efi-directory=/boot/efi")
+    os.system("grub-mkconfig -o /boot/efi/grub/grub.cfg")
+    print("Installation finished. Exiting chroot...")
+    os.system("exit")
+
+CRITICALS()
+
+
