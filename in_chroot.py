@@ -3,7 +3,8 @@ import os
 ROOTPT = "/dev/vda1"
 EFIPT = "/dev/vda2"
 SWAPPT = "/dev/vda3"
-PROFILE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd-desktop/"
+# PROFILE="https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd-desktop/"
+PROFILE = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-systemd/latest-stage3-amd64-systemd.txt"
 PROFILENR = 2  # 8 for default/linux/amd64/23.0/desktop/plasma/systemd
 CONTINENT = "Europe"
 CAPITAL = "Bucharest"
@@ -73,13 +74,13 @@ def CRITICALS():
     print("Resyncing quietly...")
     os.system("emerge --sync --quiet")
     print("Selecting profile...")
-    os.system(f"eselect profile {PROFILENR}")
+    os.system(f"eselect profile {PROFILENR}") # gives error: action unknown: 2
     print("Upgrading system...")
     os.system("emerge --ask --verbose --update --deep --changed-use @world")
     print("Configuring zoneinfo...")
     os.system(f"ln -sf ../usr/share/zoneinfo/{CONTINENT}/{CAPITAL} /etc/localtime")
     print("Configuring locale...")
-    os.system("""echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen""")
+    os.system("""echo "en_US.UTF-8 UTF-8" > /etc/locale.gen""")
     os.system("locale-gen")
     os.system("eselect locale list")
     locale_nr = int(input("Select your locale from the list!: "))
@@ -91,22 +92,27 @@ def CRITICALS():
     os.system("""
     echo "sys-kernel/linux-firmware @BINARY-REDISTRIBUTABLE" >> /etc/portage/package.license
     """)
-    os.system("emerge --ask sys-kernel/linux-firmware")    
-    os.system("emerge --ask sys-firmware/sof-firmware")
-    os.system("emerge --ask sys-firmware/intel-microcode")
+    os.system("""
+    echo "sys-firmware/intel-microcode" >> /etc/portage/package.unmask
+    """)
+    os.system("emerge --ask=n sys-kernel/linux-firmware")    
+    os.system("emerge --ask=n sys-firmware/sof-firmware")
+    os.system("emerge --ask=n sys-firmware/intel-microcode")
     os.system("""
     echo "sys-kernel/installkernel systemd dracut grub" >> /etc/portage/package.use/installkernel
     """)
-    os.system("emerge --ask sys-kernel/gentoo-kernel-bin")
-    os.system("emerge --ask dev-vcs/git sys-devel/make")
+    os.system("emerge --ask=n sys-kernel/gentoo-kernel-bin")
+    os.system("emerge --ask=n dev-vcs/git sys-devel/make")
     os.system("git clone https://codeberg.org/coast/cfstabgen.git")
     os.system("cd cfstabgen")
     os.system("make && make install")
     os.system("cfstabgen -U / >> /etc/fstab")
     os.system(f"echo {HOSTNAME} > /etc/hostname")
-    os.system("emerge --ask net-misc/dhcpcd")
+    os.system("emerge --ask=n net-misc/dhcpcd")
     os.system("systemctl enable dhcpcd")
-    os.system(f"{hosts} > /etc/hosts")
+    with open("/etc/hosts", "w") as f: 
+        f.write(hosts)
+    print("Replaced /etc/hosts with new hostname:", HOSTNAME)
     os.system("passwd")
     print("Your root password has been set!")
     os.system(f"useradd -m -G users,wheel,audio,video -s /bin/bash {USERNAME}")
@@ -260,17 +266,25 @@ def CRITICALS():
     ## Read drop-in files from /etc/sudoers.d
     @includedir /etc/sudoers.d
     """
+    def CONFIGURE_SUDOERS():
+        os.system("emerge -q sudo")
 
-    os.system("emerge -q sudo")
-    os.system(f"echo {sudo_config} > /etc/sudoers")
-    os.system("emerge --ask net-wireless/iw net-wireless/wpa_supplicant")
+        with open("/etc/sudoers", "w") as f:
+            f.write(sudo_config)
+    print("Replaced /etc/sudoers with custom configuration.")
+    CONFIGURE_SUDOERS()
+    os.system("emerge --ask=n net-wireless/iw net-wireless/wpa_supplicant")
     os.system("""
     echo 'GRUB_PLATFORMS="efi-64"' >> /etc/portage/make.conf
     """)
-    os.system("emerge --ask --verbose sys-boot/grub")
+    os.system("emerge --ask=n --verbose sys-boot/grub")
+    os.system(f"mount {EFIPT} /boot/efi")
     os.system("grub-install --efi-directory=/boot/efi")
+    os.system("mkdir -p /boot/efi/grub")
     os.system("grub-mkconfig -o /boot/efi/grub/grub.cfg")
+    os.system("mount -o remount,rw /")
     print("Installation finished. Exiting chroot...")
+    print("Done! You may reboot now.")
     os.system("exit")
 
 CRITICALS()
