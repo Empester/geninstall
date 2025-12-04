@@ -1,4 +1,6 @@
 import os
+import requests
+import re
 
 ROOTPT = "/dev/"
 EFIPT = "/dev/"
