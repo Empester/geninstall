@@ -26,6 +26,23 @@ filename = stage3_lines[-1].split()[0]
 # Store in PROFILE
 PROFILE = filename
 
+import requests
+import re
+import os
+
+# Get latest stage3
+URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/latest-stage3-amd64-desktop-systemd.txt"
+resp = requests.get(URL)
+resp.raise_for_status()
+lines = [line.strip() for line in resp.text.splitlines() if line.strip()]
+stage3_lines = [line for line in lines if line.startswith("stage3-amd64")]
+PROFILE = stage3_lines[-1].split()[0]
+print("Latest stage3:", PROFILE)
+
+# Download
+BASE_URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/"
+
+
 
 # os.system('pwd')
 def mkfs():
@@ -51,11 +68,12 @@ def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
     os.system(f"mount {ROOTPT} /mnt/gentoo")
     print("Latest stage3 profile:", PROFILE)
-    os.system(f"cd /mnt/gentoo && wget {PROFILE}")
+    os.system(f"cd /mnt/gentoo && wget {BASE_URL}{PROFILE}")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     os.system(f"""cd /mnt/gentoo/ && echo ''MAKEOPTS="-j{MAKEOPTS_J} -l{MAKEOPTS_L}"' >> /etc/portage/make.conf""")
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
     os.system("cd /mnt/gentoo && arch-chroot /mnt/gentoo /usr/bin/python3 /root/in-chroot.py")
+
 
 MOUNT()
 
@@ -64,3 +82,4 @@ def require_root():
         print("This script must be run as root.")
         sys.exit(1)
 require_root()
+
