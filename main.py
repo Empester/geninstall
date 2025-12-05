@@ -70,7 +70,7 @@ def MOUNT():
     os.system(f"mount {ROOTPT} /mnt/gentoo")
     print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
-    os.system(f"cd /mnt/gentoo && links https://www.gentoo.org/downloads/mirrors")
+    os.system(f"cd /mnt/gentoo && links https://www.gentoo.org/downloads/")
     print(f"Finished links utility")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
