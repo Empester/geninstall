@@ -1,0 +1,37 @@
+{
+  "disk_config": {
+    "device": "/dev/sda",
+    "boot_partition": "/dev/sda1",
+    "root_partition": "/dev/sda2",
+    "swap_partition": null,
+    "filesystem": "ext4",
+    "encryption": "none",
+    "encryption_password": null
+  },
+  "system_config": {
+    "hostname": "gentoo-machine",
+    "timezone": "America/New_York",
+    "locale": "en_US.UTF-8",
+    "keymap": "us"
+  },
+  "root_password": "changeme",
+  "users": [
+    {
+      "username": "john",
+      "password": "userpassword",
+      "shell": "/bin/bash",
+      "groups": ["wheel", "audio", "video", "usb", "users"]
+    }
+  ],
+  "bootloader": "grub",
+  "init_system": "openrc",
+  "profile": "minimal",
+  "stage3_mirror": "https://distfiles.gentoo.org/releases/amd64/autobuilds",
+  "additional_packages": [
+    "app-editors/vim",
+    "net-misc/dhcpcd",
+    "sys-process/cronie"
+  ],
+  "kernel_config": "genkernel",
+  "make_opts": "-j4"
+}
