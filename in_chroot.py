@@ -97,7 +97,7 @@ def CRITICALS():
     os.system("git clone https://codeberg.org/coast/cfstabgen.git")
     os.system("cd cfstabgen")
     os.system("make && make install")
-    os.system("cfstabgen -U / >> /etc/fstab")
+    os.system("cfstabgen -U / > /etc/fstab")
     os.system(f"echo {HOSTNAME} > /etc/hostname")
     os.system("emerge --ask=n net-misc/dhcpcd")
     os.system("systemctl enable dhcpcd")
