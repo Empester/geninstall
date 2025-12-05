@@ -65,9 +65,9 @@ def CRITICALS():
     print("Resyncing quietly...")
     os.system("emerge --sync --quiet")
     print("Selecting profile...")
-    os.system(f"eselect profile {PROFILENR}") # gives error: action unknown: 2
+    os.system(f"eselect profile set {PROFILENR}") # gives error: action unknown: 2
     print("Upgrading system...")
-    os.system("emerge --ask --verbose --update --deep --changed-use @world")
+    os.system("emerge --verbose --update --deep --changed-use @world")
     print("Configuring zoneinfo...")
     os.system(f"ln -sf ../usr/share/zoneinfo/{CONTINENT}/{CAPITAL} /etc/localtime")
     print("Configuring locale...")
