@@ -63,10 +63,17 @@ BASE_URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-a
 #             print("Aborting partitioning. Please check your config.")
 
 # partition()
+def mkfs():
+    os.system(f"mkfs.ext4 {ROOTPT}")
+    os.system(f"mkfs.fat -F32 {EFIPT}")
+    os.system(f"mkswap {SWAPPT}")
+    os.system(f"swapon {SWAPPT}")
 
 def partition():
-    
-
+    skip = cfg_get("SKIP", "").lower()
+    if skip in ("y", "yes"):
+        mkfs()
+    else:
         answer = input(f"""
 Your root partition is {ROOTPT}
 Your EFI partition is {EFIPT}
@@ -76,8 +83,6 @@ If correct, insert Y or N: """).strip().upper()
             mkfs()
         else:
             print("Aborting partitioning. Please check your config.")
-
-partition()
 
 
 def MOUNT():
