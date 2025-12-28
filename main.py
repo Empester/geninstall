@@ -47,11 +47,26 @@ print("Latest stage3:", PROFILE)
 BASE_URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/"
 
 
+# def partition():
+#     skip = cfg_get("SKIP", "").lower()
+#     if skip in ("y", "yes"):
+#         mkfs()
+#     else:
+#         answer = input(f"""
+# Your root partition is {ROOTPT}
+# Your EFI partition is {EFIPT}
+# Your SWAP partition is {SWAPPT}
+# If correct, insert Y or N: """).strip().upper()
+#         if answer == "Y":
+#             mkfs()
+#         else:
+#             print("Aborting partitioning. Please check your config.")
+
+# partition()
+
 def partition():
-    skip = cfg_get("SKIP", "").lower()
-    if skip in ("y", "yes"):
-        mkfs()
-    else:
+    
+
         answer = input(f"""
 Your root partition is {ROOTPT}
 Your EFI partition is {EFIPT}
@@ -63,6 +78,7 @@ If correct, insert Y or N: """).strip().upper()
             print("Aborting partitioning. Please check your config.")
 
 partition()
+
 
 def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
