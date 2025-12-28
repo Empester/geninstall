@@ -87,3 +87,19 @@ def cfg_validate():
         raise ValueError(f"Missing required config keys: {missing}")
     
     return True
+
+def apply_password(username, password):
+    if not password:
+        raise RuntimeError(f"Password for {username} is empty")
+
+    os.system(f'echo "{username}:{password}" | chpasswd')
+
+def ensure_config():
+    if not os.path.exists(CONFIG_FILE):
+        content = "// Gentoo install configuration file\n"
+        content += json.dumps(DEFAULT_CONFIG, indent=2)
+        with open(CONFIG_FILE, "w") as f:
+            f.write(content)
+        print(f"{CONFIG_FILE} created with default values.")
+    else:
+        print(f"{CONFIG_FILE} already exists.")

@@ -1,5 +1,5 @@
 import os
-
+from modules import *
 ROOTPT = cfg_get("ROOTPT")
 EFIPT = cfg_get("EFIPT")
 SWAPPT = cfg_get("SWAPPT")
@@ -92,8 +92,7 @@ def CRITICALS():
     os.system("emerge sys-kernel/gentoo-kernel-bin")
     os.system("emerge dev-vcs/git sys-devel/make")
     os.system("git clone https://codeberg.org/coast/cfstabgen.git")
-    os.system("cd cfstabgen")
-    os.system("make && make install")
+    os.system("cd cfstabgen && make && make install") 
     os.system("cfstabgen -U / > /etc/fstab")
     os.system(f"echo {HOSTNAME} > /etc/hostname")
     os.system("emerge net-misc/dhcpcd")
@@ -102,11 +101,6 @@ def CRITICALS():
         f.write(hosts)
     print("Replaced /etc/hosts with new hostname:", HOSTNAME)
 
-def apply_password(username, password):
-    if not password:
-        raise RuntimeError(f"Password for {username} is empty")
-
-    os.system(f'echo "{username}:{password}" | chpasswd')
     
     print("Setting root password...")
     apply_password("root", RPSW)
