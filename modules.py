@@ -103,3 +103,17 @@ def ensure_config():
         print(f"{CONFIG_FILE} created with default values.")
     else:
         print(f"{CONFIG_FILE} already exists.")
+
+DEFAULT_CONFIG = {
+    "ROOTPT": "/dev/",
+    "EFIPT": "/dev/",
+    "SWAPPT": "sda5",
+    "URL": "https://your-profile-url",
+    "PROFILE": 0,
+    "HOSTNAME": "gentoo-pc",
+    "USERNAME": "user",
+    "ZONEINFO": "Europe/Bucharest",
+    "LOCALE": 0,
+    "ROOT_PASSWORD": "",
+    "USER_PASSWORD": ""
+}

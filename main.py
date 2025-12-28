@@ -95,19 +95,6 @@ def MOUNT():
 
 MOUNT()
 
-DEFAULT_CONFIG = {
-    "ROOTPT": "/dev/",
-    "EFIPT": "/dev/",
-    "SWAPPT": "sda5",
-    "URL": "https://your-profile-url",
-    "PROFILE": 0,
-    "HOSTNAME": "gentoo-pc",
-    "USERNAME": "user",
-    "ZONEINFO": "Europe/Bucharest",
-    "LOCALE": 0,
-    "ROOT_PASSWORD": "",
-    "USER_PASSWORD": ""
-}
 
 
 
