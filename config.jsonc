@@ -10,7 +10,7 @@
   "URL": "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-systemd/latest-stage3-amd64-systemd.txt",
   "PROFILE": 2,
   "ZONEINFO": "Europe/Bucharest",
-  "LOCALE": 4,
+  "LOCALE": 1,
   "ROOT_PASSWORD": "",
   "USER_PASSWORD":""
 }

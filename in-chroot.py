@@ -8,7 +8,7 @@ PROFILENR = cfg_get("PROFILE")  # 8 for default/linux/amd64/23.0/desktop/plasma/
 HOSTNAME = cfg_get("HOSTNAME")
 USERNAME = cfg_get("USERNAME")
 ZONEINFO = cfg_get("ZONEINFO")
-LOCALE = cfg_get("LOCALE")
+LOCALE = detect_and_set_locale()
 RPSW = cfg_get("ROOT_PASSWORD")
 UPSW = cfg_get("USER_PASSWORD")
 
