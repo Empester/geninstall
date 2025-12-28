@@ -1,0 +1,16 @@
+{
+  "USERNAME": "MyNewUser",
+  "HOSTNAME": "gentoo",
+  "ROOTPT": "/dev/",
+  "EFIPT": "/dev/",
+  "SWAPPT": "/dev/",
+  "MAKEOPTS_J": 2,
+  "MAKEOPTS_L": 3,
+  "INIT": "systemd",
+  "URL": "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-systemd/latest-stage3-amd64-systemd.txt",
+  "PROFILE": 2,
+  "ZONEINFO": "Europe/Bucharest",
+  "LOCALE": 4,
+  "ROOT_PASSWORD": "",
+  "USER_PASSWORD":""
+}
