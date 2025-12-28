@@ -4,6 +4,7 @@
   "ROOTPT": "/dev/",
   "EFIPT": "/dev/",
   "SWAPPT": "/dev/",
+  "SKIP":"y",
   "MAKEOPTS_J": 2,
   "MAKEOPTS_L": 3,
   "INIT": "systemd",

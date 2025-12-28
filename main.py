@@ -55,16 +55,22 @@ def mkfs():
     os.system(f"mkswap {SWAPPT}")
     os.system(f"swapon {SWAPPT}")
 
-def partition():
-    answer = input(f"""
-    \t Your root partition is {ROOTPT}
-    \t Your EFI partition is {EFIPT}
-    \t Your SWAP partition is {SWAPPT}
-    If correct, insert Y or N
-
-    """)
-    if answer.upper() == "Y":
+def partition(skip):
+    skip = cfg_get("SKIP").lower()
+    if skip == "y" or "yes":
         mkfs()
+
+    else:
+        
+
+        answer = input(f"""
+        \t Your root partition is {ROOTPT}
+        \t Your EFI partition is {EFIPT}
+        \t Your SWAP partition is {SWAPPT}
+        If correct, insert Y or N
+        """)
+        if answer.upper() == "Y":
+            mkfs()
 
 partition()
 
@@ -74,7 +80,7 @@ def MOUNT():
     os.system(f"mount {ROOTPT} /mnt/gentoo")
     print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
-    os.system(f"cd /mnt/gentoo && links https://www.gentoo.org/downloads/mirrors")
+    os.system(f"cd /mnt/gentoo && links https://www.gentoo.org/downloads/")
     print(f"Finished links utility")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
