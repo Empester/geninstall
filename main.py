@@ -47,30 +47,20 @@ print("Latest stage3:", PROFILE)
 BASE_URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/"
 
 
-
-# os.system('pwd')
-def mkfs():
-    os.system(f"mkfs.ext4 {ROOTPT}")
-    os.system(f"mkfs.fat -F32 {EFIPT}")
-    os.system(f"mkswap {SWAPPT}")
-    os.system(f"swapon {SWAPPT}")
-
-def partition(skip):
-    skip = cfg_get("SKIP").lower()
-    if skip == "y" or "yes":
+def partition():
+    skip = cfg_get("SKIP", "").lower()
+    if skip in ("y", "yes"):
         mkfs()
-
     else:
-        
-
         answer = input(f"""
-        \t Your root partition is {ROOTPT}
-        \t Your EFI partition is {EFIPT}
-        \t Your SWAP partition is {SWAPPT}
-        If correct, insert Y or N
-        """)
-        if answer.upper() == "Y":
+Your root partition is {ROOTPT}
+Your EFI partition is {EFIPT}
+Your SWAP partition is {SWAPPT}
+If correct, insert Y or N: """).strip().upper()
+        if answer == "Y":
             mkfs()
+        else:
+            print("Aborting partitioning. Please check your config.")
 
 partition()
 
@@ -94,15 +84,13 @@ def MOUNT():
 
     # Move the file from current dir into /mnt/gentoo/root
     os.system("mv in_chroot.py /mnt/gentoo/root/in_chroot.py")
+    os.system("mv modules.py /mnt/gentoo/root/modules.py")
 
     # Run inside chroot
     os.system("arch-chroot /mnt/gentoo python /root/in_chroot.py")
     print("Chroot successful!")
 
 MOUNT()
-
-
-
 
 def require_root():
     if os.geteuid() != 0:
