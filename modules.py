@@ -6,16 +6,30 @@ import os
 CONFIG_FILE = "config.jsonc"
 
 def _load():
-    """Load and parse JSONC configuration file."""
-    with open(CONFIG_FILE, "r") as f:
-        content = f.read()
-    
-    # Remove single-line comments (// ...)
-    content = re.sub(r'//.*?$', '', content, flags=re.MULTILINE)
-    # Remove multi-line comments (/* ... */)
-    content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-    
+    with open(CONFIG_FILE, encoding="utf-8") as f:
+        lines = f.readlines()
+
+    clean_lines = []
+    for line in lines:
+        # Remove // comments only if they are not inside quotes
+        if '//' in line:
+            parts = line.split('//')
+            in_string = False
+            clean_line = ''
+            for i, c in enumerate(line):
+                if c == '"':
+                    in_string = not in_string
+                if line[i:i+2] == '//' and not in_string:
+                    break  # stop at comment outside string
+                clean_line += c
+            clean_lines.append(clean_line.rstrip() + '\n')
+        else:
+            clean_lines.append(line)
+
+    content = ''.join(clean_lines)
     return json.loads(content)
+
+
 
 def _save(data):
     """Save configuration to file."""
