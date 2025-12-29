@@ -3,7 +3,7 @@ import re
 import subprocess
 import os
 
-CONFIG_FILE = "/root/config.jsonc"
+CONFIG_FILE = "config.jsonc"
 
 def _load():
     with open(CONFIG_FILE, encoding="utf-8") as f:
