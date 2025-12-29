@@ -106,10 +106,10 @@ def MOUNT():
     # Move the file from current dir into /mnt/gentoo/root
     os.system("mv in_chroot.py /mnt/gentoo/root/")
     os.system("mv modules.py /mnt/gentoo/root/")
-    os.system("mv config.jsonc /mnt/gentoo/root/")
+    # os.system("mv config.jsonc /mnt/gentoo/root/")
 
     # Run inside chroot
-    os.system("arch-chroot /mnt/ python /root/in_chroot.py")
+    os.system("arch-chroot /mnt python /root/in_chroot.py")
     print("Chroot successful!")
 
 MOUNT()
