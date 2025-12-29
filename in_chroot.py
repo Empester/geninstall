@@ -8,7 +8,7 @@ PROFILENR = cfg_get("PROFILE")  # 8 for default/linux/amd64/23.0/desktop/plasma/
 HOSTNAME = cfg_get("HOSTNAME")
 USERNAME = cfg_get("USERNAME")
 ZONEINFO = cfg_get("ZONEINFO")
-LOCALE = detect_and_set_locale()
+# LOCALE will be set after locale-gen in CRITICALS()
 RPSW = cfg_get("ROOT_PASSWORD")
 UPSW = cfg_get("USER_PASSWORD")
 
@@ -73,6 +73,8 @@ def CRITICALS():
     print("Configuring locale...")
     os.system("""echo "en_US.UTF-8 UTF-8" > /etc/locale.gen""")
     os.system("locale-gen")
+    # Now detect and set locale after it's been generated
+    LOCALE = detect_and_set_locale()
     print(f"Continuing with locale selected: {LOCALE}...")
     os.system(f"eselect locale set {LOCALE}")
     os.system("env-update")

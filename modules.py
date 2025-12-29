@@ -51,6 +51,8 @@ def detect_and_set_locale():
     """Detect and set the locale from eselect."""
     current_locale = cfg_get("LOCALE")
     
+    # If LOCALE is 1, try to auto-detect (1 is the "auto-detect" flag)
+    # If LOCALE is 0 or any other number, use that number directly
     if current_locale == 1:
         try:
             # Run eselect locale list and capture output
@@ -62,9 +64,9 @@ def detect_and_set_locale():
             )
             output = result.stdout
             
-            # Search for en_US.utf8 in the output
+            # Search for en_US.utf8 or en_US.UTF-8 in the output (case insensitive)
             for line in output.splitlines():
-                if "en_US.utf8" in line:
+                if "en_US.utf8" in line.lower() or "en_US.UTF-8" in line:
                     match = re.search(r"\[(\d+)\]", line)
                     if match:
                         number = int(match.group(1))
@@ -72,10 +74,26 @@ def detect_and_set_locale():
                         print(f"LOCALE set to en_US.utf8 (number {number})")
                         return number
             
-            raise RuntimeError("en_US.utf8 not found in eselect locale list")
+            # If not found, try to find any en_US locale
+            for line in output.splitlines():
+                if "en_US" in line.lower():
+                    match = re.search(r"\[(\d+)\]", line)
+                    if match:
+                        number = int(match.group(1))
+                        cfg_set("LOCALE", number)
+                        print(f"LOCALE set to en_US variant (number {number})")
+                        return number
+            
+            # If still not found, use default value 0 and let the user set it manually
+            print("WARNING: en_US.utf8 not found in eselect locale list, using default")
+            return 0
         
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to run eselect: {e}")
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            # If eselect doesn't exist or fails, just use the config value
+            print(f"WARNING: Could not run eselect locale list: {e}")
+            print("Using LOCALE from config or defaulting to 0")
+            # If auto-detect failed, return 0 as fallback
+            return 0
     
     print(f"LOCALE already set to {current_locale}, leaving as-is")
     return current_locale
