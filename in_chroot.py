@@ -135,7 +135,11 @@ def CRITICALS():
     print_header("SYSTEM UPGRADE")
     print_info("Upgrading system packages to latest versions...")
     print_info("This process may take a significant amount of time depending on system specifications...")
+    # Ensure read-write before long operation
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     os.system("emerge --verbose --update --deep --changed-use @world")
+    # Check and fix after long operation
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     print_success("System upgrade completed")
     print_separator()
     
@@ -195,7 +199,9 @@ def CRITICALS():
     
     print_info("Installing Gentoo binary kernel...")
     print_info("This may take several minutes...")
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     os.system("emerge sys-kernel/gentoo-kernel-bin")
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     print_success("Kernel installed successfully")
     print_separator()
     
@@ -428,7 +434,9 @@ def CRITICALS():
     
     print_info("Installing GRUB bootloader...")
     print_info("This may take several minutes...")
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     os.system("emerge --verbose sys-boot/grub")
+    os.system("mount -o remount,rw / 2>/dev/null; sync")
     print_success("GRUB installed successfully")
     
     # Ensure EFI partition is mounted (it should already be from earlier)
@@ -457,14 +465,31 @@ def CRITICALS():
     print_separator()
     
     print_header("FILESYSTEM VERIFICATION")
-    # Remount root as read-write if it became read-only (check and fix)
-    print_info("Checking filesystem mount status...")
-    remount_result = os.system("mount -o remount,rw / 2>/dev/null")
-    if remount_result != 0:
-        print_warning("Could not remount root as read-write. This may indicate filesystem errors.")
-        print_warning("After exiting chroot, you may need to run: fsck -y <root-partition>")
-    else:
-        print_success("Root filesystem is mounted read-write")
+    # Function to ensure read-write
+    def ensure_rw():
+        print_info("Checking filesystem mount status...")
+        mount_info = os.popen("mount | grep ' / '").read()
+        if "ro," in mount_info or ",ro" in mount_info or " read-only" in mount_info:
+            print_warning("Root filesystem is read-only, attempting to remount...")
+            remount_result = os.system("mount -o remount,rw / 2>/dev/null")
+            if remount_result != 0:
+                print_error("Could not remount root as read-write")
+                print_error("This may indicate filesystem errors")
+                print_error("After exiting chroot, you may need to run: fsck -y <root-partition>")
+                return False
+            print_success("Successfully remounted as read-write")
+            os.system("sync")
+        else:
+            print_success("Root filesystem is mounted read-write")
+        return True
+    
+    # Check periodically during installation
+    ensure_rw()
+    
+    # Final sync before exit
+    print_info("Synchronizing all filesystem writes...")
+    os.system("sync")
+    ensure_rw()
     print_separator()
     
     print_header("INSTALLATION COMPLETE")

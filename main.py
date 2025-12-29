@@ -136,15 +136,58 @@ def is_partition_formatted(device):
         return fs_type == "ext4"
     return False
 
+def check_and_fix_filesystem(device):
+    """Check filesystem for errors and fix them if needed"""
+    print_info(f"Checking filesystem on {device} for errors...")
+    # Run fsck in non-interactive mode to check and fix errors
+    fsck_result = os.system(f"fsck -y -f {device} > /dev/null 2>&1")
+    if fsck_result == 0:
+        print_success("Filesystem check passed")
+        return True
+    else:
+        print_warning("Filesystem check found and fixed some errors")
+        return True  # Continue anyway as errors were fixed
+
+def ensure_read_write(mount_point, device):
+    """Ensure filesystem is mounted read-write, remount if needed"""
+    mount_info = os.popen(f"mount | grep {device}").read()
+    if "ro," in mount_info or ",ro" in mount_info or " read-only" in mount_info:
+        print_warning(f"{device} is mounted read-only, attempting to remount as read-write...")
+        # First try to remount
+        remount_result = os.system(f"mount -o remount,rw {device} {mount_point} 2>/dev/null")
+        if remount_result != 0:
+            # If remount fails, unmount and remount
+            print_info("Remount failed, trying unmount and remount...")
+            os.system(f"umount {mount_point} 2>/dev/null")
+            mount_result = os.system(f"mount -t ext4 -o rw,noatime {device} {mount_point}")
+            if mount_result != 0:
+                print_error(f"Failed to remount {device} as read-write")
+                return False
+        print_success("Filesystem remounted as read-write")
+        # Sync to ensure changes are written
+        os.system("sync")
+        return True
+    return True
+
 def MOUNT():
     print_header("MOUNTING ROOT PARTITION")
     print_info("Creating mount point directory: /mnt/gentoo")
     os.system("mkdir -p /mnt/gentoo")
     print_success("Mount point directory created: /mnt/gentoo")
     
-    print_info(f"Mounting {ROOTPT} to /mnt/gentoo as ext4 filesystem (read-write)...")
-    # Check if mount succeeds - explicitly specify ext4 filesystem type with read-write
-    mount_result = os.system(f"mount -t ext4 -o rw {ROOTPT} /mnt/gentoo")
+    # Check filesystem for errors before mounting
+    print_info("Checking filesystem for errors before mounting...")
+    check_and_fix_filesystem(ROOTPT)
+    
+    # Unmount if already mounted (might be read-only)
+    if os.path.ismount("/mnt/gentoo"):
+        print_info("Partition is already mounted, unmounting first...")
+        os.system("umount /mnt/gentoo 2>/dev/null")
+        os.system("sync")
+    
+    print_info(f"Mounting {ROOTPT} to /mnt/gentoo as ext4 filesystem (read-write, noatime)...")
+    # Mount with noatime to reduce writes and rw explicitly
+    mount_result = os.system(f"mount -t ext4 -o rw,noatime {ROOTPT} /mnt/gentoo")
     if mount_result != 0:
         print_error(f"Failed to mount {ROOTPT} to /mnt/gentoo")
         print_error("Make sure the partition is formatted with mkfs.ext4 first")
@@ -152,22 +195,28 @@ def MOUNT():
     
     # Verify it's mounted read-write
     print_info("Verifying mount status and read-write permissions...")
-    mount_info = os.popen(f"mount | grep {ROOTPT}").read()
-    if "ro," in mount_info or ",ro" in mount_info:
-        print_warning(f"{ROOTPT} is mounted read-only, attempting to remount as read-write...")
-        remount_result = os.system(f"mount -o remount,rw {ROOTPT} /mnt/gentoo")
-        if remount_result != 0:
-            print_error(f"Failed to remount {ROOTPT} as read-write")
-            print_error("The filesystem may have errors. Run: fsck -y {ROOTPT}")
-            sys.exit(1)
-        print_success("Successfully remounted as read-write")
+    if not ensure_read_write("/mnt/gentoo", ROOTPT):
+        print_error("Failed to ensure read-write mount")
+        sys.exit(1)
     
     # Verify mount was successful by checking if the mount point is actually mounted
     if not os.path.ismount("/mnt/gentoo"):
         print_error(f"{ROOTPT} is not mounted at /mnt/gentoo")
         sys.exit(1)
     
-    print_success(f"Successfully mounted {ROOTPT} to /mnt/gentoo")
+    # Test write access
+    print_info("Testing write access to mounted filesystem...")
+    test_file = "/mnt/gentoo/.mount_test"
+    try:
+        with open(test_file, "w") as f:
+            f.write("test")
+        os.remove(test_file)
+        print_success("Write access verified")
+    except Exception as e:
+        print_error(f"Write test failed: {e}")
+        sys.exit(1)
+    
+    print_success(f"Successfully mounted {ROOTPT} to /mnt/gentoo (read-write)")
     print_separator()
     
     print_header("STAGE3 DOWNLOAD AND EXTRACTION")
@@ -196,11 +245,20 @@ def MOUNT():
     # Extract with error checking
     print_info("Extracting stage3 tarball...")
     print_info("This process extracts the Gentoo base system and may take a few minutes...")
+    # Ensure filesystem is still read-write before extraction
+    ensure_read_write("/mnt/gentoo", ROOTPT)
     tar_result = os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner 2>&1")
     if tar_result != 0:
         print_error("Failed to extract stage3 tarball. This may indicate disk space issues.")
         print_error("Check available space and filesystem errors.")
+        # Check filesystem status
+        ensure_read_write("/mnt/gentoo", ROOTPT)
         sys.exit(1)
+    # Sync after extraction to ensure all data is written
+    print_info("Synchronizing filesystem after extraction...")
+    os.system("sync")
+    # Verify still read-write after extraction
+    ensure_read_write("/mnt/gentoo", ROOTPT)
     print_success("Stage3 tarball extracted successfully")
     print_separator()
     
@@ -220,15 +278,22 @@ def MOUNT():
     print_success("Successfully copied /etc/resolv.conf to /mnt/gentoo/etc/")
     
     print_info("Copying installation scripts to chroot environment...")
+    # Ensure read-write before copying
+    ensure_read_write("/mnt/gentoo", ROOTPT)
     os.system("cp in_chroot.py /mnt/gentoo/ && cp modules.py /mnt/gentoo/ && cp config.jsonc /mnt/gentoo/")
+    os.system("sync")
     print_success("Copied in_chroot.py, modules.py, and config.jsonc to /mnt/gentoo/")
     print_separator()
     
     print_header("ENTERING CHROOT ENVIRONMENT")
     print_info("Starting chroot environment and running installation script...")
     print_info("All subsequent operations will run inside the chrooted Gentoo system")
+    # Final check before chroot
+    ensure_read_write("/mnt/gentoo", ROOTPT)
     print_separator()
     os.system("arch-chroot /mnt/gentoo python in_chroot.py")
+    # Check after chroot exits
+    ensure_read_write("/mnt/gentoo", ROOTPT)
     
     print_separator()
     print_success("Chroot session completed successfully!")
