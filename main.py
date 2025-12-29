@@ -95,10 +95,11 @@ def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
     print("Made parent directory: [/mnt/gentoo]")
     
-    # Check if mount succeeds
-    mount_result = os.system(f"mount {ROOTPT} /mnt/gentoo")
+    # Check if mount succeeds - explicitly specify ext4 filesystem type
+    mount_result = os.system(f"mount -t ext4 {ROOTPT} /mnt/gentoo")
     if mount_result != 0:
         print(f"ERROR: Failed to mount {ROOTPT} to /mnt/gentoo")
+        print("Make sure the partition is formatted with mkfs.ext4 first")
         sys.exit(1)
     
     # Verify mount was successful by checking if the mount point is actually mounted
