@@ -71,7 +71,7 @@ def detect_and_set_locale():
                     if match:
                         number = int(match.group(1))
                         cfg_set("LOCALE", number)
-                        print(f"LOCALE set to en_US.utf8 (number {number})")
+                        print(f"\033[92m✓ LOCALE set to en_US.utf8 (number {number})\033[0m")
                         return number
             
             # If not found, try to find any en_US locale
@@ -81,21 +81,21 @@ def detect_and_set_locale():
                     if match:
                         number = int(match.group(1))
                         cfg_set("LOCALE", number)
-                        print(f"LOCALE set to en_US variant (number {number})")
+                        print(f"\033[92m✓ LOCALE set to en_US variant (number {number})\033[0m")
                         return number
             
             # If still not found, use default value 0 and let the user set it manually
-            print("WARNING: en_US.utf8 not found in eselect locale list, using default")
+            print(f"\033[93m⚠ WARNING: en_US.utf8 not found in eselect locale list, using default\033[0m")
             return 0
         
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             # If eselect doesn't exist or fails, just use the config value
-            print(f"WARNING: Could not run eselect locale list: {e}")
-            print("Using LOCALE from config or defaulting to 0")
+            print(f"\033[93m⚠ WARNING: Could not run eselect locale list: {e}\033[0m")
+            print(f"\033[96mℹ Using LOCALE from config or defaulting to 0\033[0m")
             # If auto-detect failed, return 0 as fallback
             return 0
     
-    print(f"LOCALE already set to {current_locale}, leaving as-is")
+    print(f"\033[96mℹ LOCALE already set to {current_locale}, leaving as-is\033[0m")
     return current_locale
 
 # Optional: Add a function to get all config at once

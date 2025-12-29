@@ -85,68 +85,173 @@ hosts = f"""
 
 
 def CRITICALS():
+    print_header("GENTOO INSTALLATION - CHROOT ENVIRONMENT")
+    print_info("Starting installation process inside chroot environment...")
+    print_separator()
+    
+    print_header("MOUNTING EFI PARTITION")
+    print_info("Creating /boot/efi directory...")
     os.system("mkdir -p /boot/efi")
     # Check if EFI partition is already mounted, if not mount it
     if not os.path.ismount("/boot/efi"):
+        print_info(f"Mounting EFI partition {EFIPT} to /boot/efi...")
         mount_result = os.system(f"mount -t vfat {EFIPT} /boot/efi")
         if mount_result != 0:
-            print(f"WARNING: Failed to mount {EFIPT} to /boot/efi, continuing anyway...")
+            print_warning(f"Failed to mount {EFIPT} to /boot/efi, continuing anyway...")
+        else:
+            print_success(f"EFI partition {EFIPT} mounted to /boot/efi")
     else:
-        print("/boot/efi is already mounted")
-    print("Syncing the system...")
+        print_success("/boot/efi is already mounted")
+    print_separator()
+    
+    print_header("PORTAGE TREE SYNC")
+    print_info("Synchronizing Portage tree with emerge-webrsync...")
+    print_info("This downloads the Gentoo package database and may take several minutes...")
     os.system("emerge-webrsync")
+    print_success("Portage tree synchronized successfully")
+    print_separator()
+    
+    print_info("Installing mirrorselect tool for mirror optimization...")
     os.system("emerge -q --oneshot app-portage/mirrorselect")
-    print("Selecting mirrors...")
+    print_success("mirrorselect installed")
+    print_separator()
+    
+    print_info("Selecting optimal mirrors for package downloads...")
     os.system("mirrorselect -i -o >> /etc/portage/make.conf")
-    print("Resyncing quietly...")
+    print_success("Mirrors configured in /etc/portage/make.conf")
+    print_separator()
+    
+    print_info("Resyncing Portage tree with selected mirrors...")
     os.system("emerge --sync --quiet")
-    print("Selecting profile...")
-    os.system(f"eselect profile set {PROFILENR}") # gives error: action unknown: 2
-    print("Upgrading system...")
+    print_success("Portage tree resynced with optimized mirrors")
+    print_separator()
+    
+    print_header("PROFILE SELECTION")
+    print_info(f"Setting Gentoo profile to profile number: {PROFILENR}")
+    os.system(f"eselect profile set {PROFILENR}")
+    print_success(f"Profile set to {PROFILENR}")
+    print_separator()
+    
+    print_header("SYSTEM UPGRADE")
+    print_info("Upgrading system packages to latest versions...")
+    print_info("This process may take a significant amount of time depending on system specifications...")
     os.system("emerge --verbose --update --deep --changed-use @world")
-    print("Configuring zoneinfo...")
+    print_success("System upgrade completed")
+    print_separator()
+    
+    print_header("TIMEZONE CONFIGURATION")
+    print_info(f"Setting timezone to: {ZONEINFO}")
     os.system(f"ln -sf ../usr/share/zoneinfo/{ZONEINFO} /etc/localtime")
-    print("Configuring locale...")
+    print_success(f"Timezone configured: {ZONEINFO}")
+    print_separator()
+    
+    print_header("LOCALE CONFIGURATION")
+    print_info("Generating locale configuration...")
+    print_info("Adding en_US.UTF-8 to locale.gen...")
     os.system("""echo "en_US.UTF-8 UTF-8" > /etc/locale.gen""")
+    print_info("Generating locales...")
     os.system("locale-gen")
+    print_success("Locales generated successfully")
     # Now detect and set locale after it's been generated
+    print_info("Detecting and setting system locale...")
     LOCALE = detect_and_set_locale()
-    print(f"Continuing with locale selected: {LOCALE}...")
+    print_info(f"Setting locale to option {LOCALE}...")
     os.system(f"eselect locale set {LOCALE}")
+    print_success(f"Locale configured: option {LOCALE}")
+    print_info("Updating environment with new locale settings...")
     os.system("env-update")
-    os.system("source /etc/profile")  
+    os.system("source /etc/profile")
+    print_success("Environment updated with locale settings")
+    print_separator()  
+    print_header("FIRMWARE INSTALLATION")
+    print_info("Configuring firmware license acceptance...")
     os.system("""
     echo "sys-kernel/linux-firmware @BINARY-REDISTRIBUTABLE" >> /etc/portage/package.license
     """)
     os.system("""
     echo "sys-firmware/intel-microcode intel-ucode" >> /etc/portage/package.license
     """)
-    os.system("emerge sys-kernel/linux-firmware")    
+    print_success("Firmware licenses configured")
+    
+    print_info("Installing Linux firmware packages...")
+    os.system("emerge sys-kernel/linux-firmware")
+    print_success("Linux firmware installed")
+    
+    print_info("Installing SOF (Sound Open Firmware)...")
     os.system("emerge sys-firmware/sof-firmware")
+    print_success("SOF firmware installed")
+    
+    print_info("Installing Intel microcode...")
     os.system("emerge sys-firmware/intel-microcode")
+    print_success("Intel microcode installed")
+    print_separator()
+    
+    print_header("KERNEL INSTALLATION")
+    print_info("Configuring installkernel package use flags...")
     os.system("""
     echo "sys-kernel/installkernel systemd dracut grub" >> /etc/portage/package.use/installkernel
     """)
+    print_success("Installkernel use flags configured")
+    
+    print_info("Installing Gentoo binary kernel...")
+    print_info("This may take several minutes...")
     os.system("emerge sys-kernel/gentoo-kernel-bin")
+    print_success("Kernel installed successfully")
+    print_separator()
+    
+    print_header("BUILD TOOLS INSTALLATION")
+    print_info("Installing git and make for build tools...")
     os.system("emerge dev-vcs/git sys-devel/make")
+    print_success("Build tools installed")
+    print_separator()
+    
+    print_header("FSTAB GENERATION")
+    print_info("Cloning cfstabgen from Codeberg...")
     os.system("git clone https://codeberg.org/coast/cfstabgen.git")
-    os.system("cd cfstabgen && make && make install") 
+    print_success("cfstabgen repository cloned")
+    
+    print_info("Building and installing cfstabgen...")
+    os.system("cd cfstabgen && make && make install")
+    print_success("cfstabgen installed")
+    
+    print_info("Generating /etc/fstab with UUIDs...")
     os.system("cfstabgen -U / > /etc/fstab")
+    print_success("/etc/fstab generated successfully")
+    print_separator()
+    
+    print_header("NETWORK CONFIGURATION")
+    print_info(f"Setting system hostname to: {HOSTNAME}")
     os.system(f"echo {HOSTNAME} > /etc/hostname")
+    print_success(f"Hostname set: {HOSTNAME}")
+    
+    print_info("Installing dhcpcd for network configuration...")
     os.system("emerge net-misc/dhcpcd")
+    print_success("dhcpcd installed")
+    
+    print_info("Enabling dhcpcd service for automatic network configuration...")
     os.system("systemctl enable dhcpcd")
+    print_success("dhcpcd service enabled")
+    
+    print_info(f"Configuring /etc/hosts with hostname: {HOSTNAME}")
     with open("/etc/hosts", "w") as f: 
         f.write(hosts)
-    print("Replaced /etc/hosts with new hostname:", HOSTNAME)
+    print_success(f"/etc/hosts configured with hostname: {HOSTNAME}")
+    print_separator()
 
-    
-    print("Setting root password...")
+    print_header("USER ACCOUNT CONFIGURATION")
+    print_info("Setting root user password...")
     apply_password("root", RPSW)
-    print("Your root password has been set!")
+    print_success("Root password has been set successfully")
+    
+    print_info(f"Creating user account: {USERNAME}")
+    print_info(f"Adding user to groups: users, wheel, audio, video")
     os.system(f"useradd -m -G users,wheel,audio,video -s /bin/bash {USERNAME}")
-    print("Setting user password...")
+    print_success(f"User account {USERNAME} created")
+    
+    print_info(f"Setting password for user: {USERNAME}")
     apply_password(USERNAME, UPSW)
-    print("Your user password has been set!")
+    print_success(f"Password for {USERNAME} has been set successfully")
+    print_separator()
 
     sudo_config = """
     ## sudoers file.
@@ -295,33 +400,79 @@ def CRITICALS():
     ## Read drop-in files from /etc/sudoers.d
     @includedir /etc/sudoers.d
     """
+    print_header("SUDO CONFIGURATION")
     def CONFIGURE_SUDOERS():
+        print_info("Installing sudo package...")
         os.system("emerge -q sudo")
-
+        print_success("sudo installed")
+        
+        print_info("Writing custom sudoers configuration...")
         with open("/etc/sudoers", "w") as f:
             f.write(sudo_config)
-    print("Replaced /etc/sudoers with custom configuration.")
+        print_success("Custom sudoers configuration written")
     CONFIGURE_SUDOERS()
+    print_separator()
+    
+    print_header("WIRELESS TOOLS INSTALLATION")
+    print_info("Installing wireless networking tools (iw, wpa_supplicant)...")
     os.system("emerge net-wireless/iw net-wireless/wpa_supplicant")
+    print_success("Wireless tools installed")
+    print_separator()
+    
+    print_header("GRUB BOOTLOADER INSTALLATION")
+    print_info("Configuring GRUB for EFI-64 platform...")
     os.system("""
     echo 'GRUB_PLATFORMS="efi-64"' >> /etc/portage/make.conf
     """)
+    print_success("GRUB platform configured")
+    
+    print_info("Installing GRUB bootloader...")
+    print_info("This may take several minutes...")
     os.system("emerge --verbose sys-boot/grub")
+    print_success("GRUB installed successfully")
+    
     # Ensure EFI partition is mounted (it should already be from earlier)
+    print_info("Verifying EFI partition mount...")
     if not os.path.ismount("/boot/efi"):
+        print_warning("/boot/efi is not mounted, attempting to mount...")
         mount_result = os.system(f"mount -t vfat {EFIPT} /boot/efi")
         if mount_result != 0:
-            print(f"ERROR: Failed to mount {EFIPT} to /boot/efi for GRUB installation")
+            print_error(f"Failed to mount {EFIPT} to /boot/efi for GRUB installation")
+        else:
+            print_success(f"EFI partition {EFIPT} mounted to /boot/efi")
+    else:
+        print_success("/boot/efi is already mounted")
+    
+    print_info("Installing GRUB to EFI directory...")
     os.system("grub-install --efi-directory=/boot/efi")
+    print_success("GRUB installed to EFI directory")
+    
+    print_info("Creating GRUB configuration directory...")
     os.system("mkdir -p /boot/efi/grub")
+    print_success("GRUB configuration directory created")
+    
+    print_info("Generating GRUB configuration file...")
     os.system("grub-mkconfig -o /boot/efi/grub/grub.cfg")
+    print_success("GRUB configuration generated")
+    print_separator()
+    
+    print_header("FILESYSTEM VERIFICATION")
     # Remount root as read-write if it became read-only (check and fix)
+    print_info("Checking filesystem mount status...")
     remount_result = os.system("mount -o remount,rw / 2>/dev/null")
     if remount_result != 0:
-        print("WARNING: Could not remount root as read-write. This may indicate filesystem errors.")
-        print("After exiting chroot, you may need to run: fsck -y <root-partition>")
-    print("Installation finished. Exiting chroot...")
-    print("Done! You may reboot now.")
+        print_warning("Could not remount root as read-write. This may indicate filesystem errors.")
+        print_warning("After exiting chroot, you may need to run: fsck -y <root-partition>")
+    else:
+        print_success("Root filesystem is mounted read-write")
+    print_separator()
+    
+    print_header("INSTALLATION COMPLETE")
+    print_success("All installation steps completed successfully!")
+    print_info("Exiting chroot environment...")
+    print_separator()
+    print_success("Installation finished. You may now reboot your system!")
+    print_separator()
     os.system("exit")
 
 CRITICALS()
