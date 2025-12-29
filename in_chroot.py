@@ -111,15 +111,50 @@ def CRITICALS():
     print_success("Portage tree synchronized successfully")
     print_separator()
     
-    print_info("Installing mirrorselect tool for mirror optimization...")
-    os.system("emerge -q --oneshot app-portage/mirrorselect")
-    print_success("mirrorselect installed")
+    print_header("MIRROR VALIDATION AND CONFIGURATION")
+    print_info("Validating and configuring Gentoo mirror for package downloads...")
     print_separator()
     
-    print_info("Selecting optimal mirrors for package downloads...")
-    os.system("mirrorselect -i -o >> /etc/portage/make.conf")
-    print_success("Mirrors configured in /etc/portage/make.conf")
-    print_separator()
+    # Validate and set mirror using the analyzer
+    mirror_url = validate_and_set_mirror()
+    
+    if not mirror_url:
+        print_error("Failed to configure a valid mirror. Installation cannot continue.")
+        print_error("Please check your network connection and try again.")
+        os.system("exit 1")
+        return
+    
+    # Configure GENTOO_MIRRORS in make.conf
+    print_info(f"Configuring GENTOO_MIRRORS in /etc/portage/make.conf...")
+    print_info(f"Setting mirror to: {mirror_url}")
+    
+    # Check if GENTOO_MIRRORS already exists in make.conf
+    make_conf_path = "/etc/portage/make.conf"
+    mirror_line = f'GENTOO_MIRRORS="{mirror_url}"\n'
+    
+    try:
+        # Read existing make.conf
+        with open(make_conf_path, "r") as f:
+            lines = f.readlines()
+        
+        # Remove any existing GENTOO_MIRRORS lines
+        lines = [line for line in lines if not line.strip().startswith("GENTOO_MIRRORS=")]
+        
+        # Add the new GENTOO_MIRRORS line
+        lines.append(mirror_line)
+        
+        # Write back to make.conf
+        with open(make_conf_path, "w") as f:
+            f.writelines(lines)
+        
+        print_success(f"GENTOO_MIRRORS configured: {mirror_url}")
+        print_separator()
+    except Exception as e:
+        print_warning(f"Could not write to make.conf directly: {e}")
+        print_info("Using echo to append GENTOO_MIRRORS...")
+        os.system(f'echo \'GENTOO_MIRRORS="{mirror_url}"\' >> {make_conf_path}')
+        print_success(f"GENTOO_MIRRORS configured: {mirror_url}")
+        print_separator()
     
     print_info("Resyncing Portage tree with selected mirrors...")
     os.system("emerge --sync --quiet")
@@ -164,7 +199,7 @@ def CRITICALS():
     print_success(f"Locale configured: option {LOCALE}")
     print_info("Updating environment with new locale settings...")
     os.system("env-update")
-    os.system("source /etc/profile")
+    os.system("source /etc/profile")  
     print_success("Environment updated with locale settings")
     print_separator()  
     print_header("FIRMWARE INSTALLATION")
@@ -178,7 +213,7 @@ def CRITICALS():
     print_success("Firmware licenses configured")
     
     print_info("Installing Linux firmware packages...")
-    os.system("emerge sys-kernel/linux-firmware")
+    os.system("emerge sys-kernel/linux-firmware")    
     print_success("Linux firmware installed")
     
     print_info("Installing SOF (Sound Open Firmware)...")
@@ -217,7 +252,7 @@ def CRITICALS():
     print_success("cfstabgen repository cloned")
     
     print_info("Building and installing cfstabgen...")
-    os.system("cd cfstabgen && make && make install")
+    os.system("cd cfstabgen && make && make install") 
     print_success("cfstabgen installed")
     
     print_info("Generating /etc/fstab with UUIDs...")
@@ -243,7 +278,7 @@ def CRITICALS():
         f.write(hosts)
     print_success(f"/etc/hosts configured with hostname: {HOSTNAME}")
     print_separator()
-
+    
     print_header("USER ACCOUNT CONFIGURATION")
     print_info("Setting root user password...")
     apply_password("root", RPSW)
@@ -411,7 +446,7 @@ def CRITICALS():
         print_info("Installing sudo package...")
         os.system("emerge -q sudo")
         print_success("sudo installed")
-        
+
         print_info("Writing custom sudoers configuration...")
         with open("/etc/sudoers", "w") as f:
             f.write(sudo_config)

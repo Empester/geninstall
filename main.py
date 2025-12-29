@@ -66,18 +66,41 @@ import re
 import os
 
 # Get latest stage3
-URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/latest-stage3-amd64-desktop-systemd.txt"
+INIT = cfg_get("INIT", "systemd").lower()
+URL = cfg_get("URL")
+
+# Universal URL handler: automatically add -systemd or -openrc before .txt based on INIT
+# Handle the filename part (before .txt)
+if URL.endswith(".txt"):
+    # Remove any existing -systemd or -openrc before .txt
+    URL = URL.replace("-systemd.txt", ".txt").replace("-openrc.txt", ".txt")
+    # Add the appropriate init system suffix
+    if INIT == "openrc":
+        URL = URL.replace(".txt", "-openrc.txt")
+    else:  # systemd or unknown (default to systemd)
+        URL = URL.replace(".txt", "-systemd.txt")
+
+# Handle the directory path part
+if INIT == "openrc":
+    URL = URL.replace("current-stage3-amd64-systemd", "current-stage3-amd64-openrc")
+    URL = URL.replace("current-stage3-amd64-desktop-systemd", "current-stage3-amd64-desktop-openrc")
+else:  # systemd or unknown (default to systemd)
+    URL = URL.replace("current-stage3-amd64-openrc", "current-stage3-amd64-systemd")
+    URL = URL.replace("current-stage3-amd64-desktop-openrc", "current-stage3-amd64-desktop-systemd")
+
 resp = requests.get(URL)
 resp.raise_for_status()
 lines = [line.strip() for line in resp.text.splitlines() if line.strip()]
 stage3_lines = [line for line in lines if line.startswith("stage3-amd64")]
 PROFILE = stage3_lines[-1].split()[0]
+print(f"Latest stage3 ({INIT}): {PROFILE}")
 print_header("GENTOO INSTALLATION SCRIPT")
 print_info(f"Detected latest stage3 tarball: {PROFILE}")
 print_separator()
 
-# Download
-BASE_URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-desktop-systemd/"
+# Download - construct BASE_URL from URL
+# Extract the base URL (everything before the filename)
+BASE_URL = URL.rsplit('/', 1)[0] + '/'
 
 
 # def partition():
@@ -300,6 +323,14 @@ def MOUNT():
     print_separator()
 
 require_root()
+
+# Validate and configure mirror
+print_separator()
+mirror_url = validate_and_set_mirror()
+if not mirror_url:
+    print_error("Failed to configure a valid mirror. Installation cannot continue.")
+    sys.exit(1)
+print_separator()
 
 # Check if partition is formatted, if not, format it
 print_header("PARTITION FORMATTING CHECK")
