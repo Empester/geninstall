@@ -109,7 +109,7 @@ def MOUNT():
     os.system("mv config.jsonc /mnt/gentoo/root/config.jsonc")
 
     # Run inside chroot
-    os.system("arch-chroot /mnt/gentoo python /root/in_chroot.py")
+    os.system("arch-chroot /mnt/gentoo python /mnt/gentoo/root/in_chroot.py")
     print("Chroot successful!")
 
 MOUNT()

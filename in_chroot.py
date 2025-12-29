@@ -1,5 +1,5 @@
 import os
-from modules import *
+from chroot_modules import *
 ROOTPT = cfg_get("ROOTPT")
 EFIPT = cfg_get("EFIPT")
 SWAPPT = cfg_get("SWAPPT")
