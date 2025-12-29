@@ -130,8 +130,10 @@ def MOUNT():
     print("MAKEOPTS set up.")
     os.system("cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
     print("Successfully copied [etc/resolv.conf] to [/mnt/gentoo/etc]")
-    # Fix: Changed 'move' to 'mv'
-    os.system("mv in_chroot.py /mnt/gentoo/ && mv modules.py /mnt/gentoo/ && arch-chroot /mnt/gentoo python in_chroot.py")
+    # Copy necessary files to chroot (use cp instead of mv to keep originals)
+    os.system("cp in_chroot.py /mnt/gentoo/ && cp modules.py /mnt/gentoo/ && cp config.jsonc /mnt/gentoo/")
+    print("Copied in_chroot.py, modules.py, and config.jsonc to /mnt/gentoo/")
+    os.system("arch-chroot /mnt/gentoo python in_chroot.py")
     # print("Chroot successful!")
 
 
