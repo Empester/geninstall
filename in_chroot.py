@@ -1,5 +1,5 @@
 import os
-from chroot_modules import *
+from modules import *
 ROOTPT = cfg_get("ROOTPT")
 EFIPT = cfg_get("EFIPT")
 SWAPPT = cfg_get("SWAPPT")
@@ -56,7 +56,7 @@ hosts = f"""
 
 def CRITICALS():
     os.system("mkdir -p boot/efi")
-    os.system(f"mount /dev/{EFIPT} boot/efi")
+    os.system(f"mount {EFIPT} boot/efi")
     print("Syncing the system...")
     os.system("emerge-webrsync")
     os.system("emerge -q --oneshot app-portage/mirrorselect")
