@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import re
 from modules import *
@@ -85,21 +86,39 @@ If correct, insert Y or N: """).strip().upper()
             print("Aborting partitioning. Please check your config.")
 
 
+def require_root():
+    if os.geteuid() != 0:
+        print("This script must be run as root.")
+        sys.exit(1)
+
 def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
     print("Made parent directory: [/mnt/gentoo]")
-    os.system(f"mount {ROOTPT} /mnt/gentoo")
+    
+    # Check if mount succeeds
+    mount_result = os.system(f"mount {ROOTPT} /mnt/gentoo")
+    if mount_result != 0:
+        print(f"ERROR: Failed to mount {ROOTPT} to /mnt/gentoo")
+        sys.exit(1)
+    
+    # Verify mount was successful by checking if the mount point is actually mounted
+    if not os.path.ismount("/mnt/gentoo"):
+        print(f"ERROR: {ROOTPT} is not mounted at /mnt/gentoo")
+        sys.exit(1)
+    
     print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
     os.system(f"wget -P /mnt/gentoo {BASE_URL}/{PROFILE}")
     print(f"Finished links utility")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
-    os.system(f"cd /mnt/gentoo && echo 'MAKEOPTS=\"-j{MAKEOPTS_J} -l{MAKEOPTS_L}\"' >> /etc/portage/make.conf")
+    # Fix: Use relative path after cd, or absolute path to mounted partition
+    os.system(f"cd /mnt/gentoo && echo 'MAKEOPTS=\"-j{MAKEOPTS_J} -l{MAKEOPTS_L}\"' >> etc/portage/make.conf")
     print("MAKEOPTS set up.")
-    os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
+    os.system("cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
     print("Successfully copied [etc/resolv.conf] to [/mnt/gentoo/etc]")
-    os.system("cd /mnt/gentoo && mv in_chroot.py /mnt/gentoo/ && move modules.py /mnt/gentoo && arch-chroot /mnt/gentoo python in_chroot.py")
+    # Fix: Changed 'move' to 'mv'
+    os.system("mv in_chroot.py /mnt/gentoo/ && mv modules.py /mnt/gentoo/ && arch-chroot /mnt/gentoo python in_chroot.py")
     # print("Chroot successful!")
 
 
@@ -113,11 +132,6 @@ def MOUNT():
 
     print("Chroot successful!")
 
-MOUNT()
-
-def require_root():
-    if os.geteuid() != 0:
-        print("This script must be run as root.")
-        sys.exit(1)
 require_root()
+MOUNT()
 
