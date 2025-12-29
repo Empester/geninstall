@@ -11,7 +11,7 @@ SWAPPT = cfg_get("SWAPPT")
 URL = "https://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-systemd/latest-stage3-amd64-systemd.txt"
 MAKEOPTS_J = cfg_get("MAKEOPTS_J")
 MAKEOPTS_L = cfg_get("MAKEOPTS_L")
-INIT = cfg_get("INIT").lower()
+# INIT = cfg_get("INIT").lower()
 
 resp = requests.get(URL)
 resp.raise_for_status()
@@ -91,25 +91,26 @@ def MOUNT():
     os.system(f"mount {ROOTPT} /mnt/gentoo")
     print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
-    os.system(f"cd /mnt/gentoo && links https://www.gentoo.org/downloads/")
+    os.system(f"wget -P /mnt/gentoo {PROFILE}")
     print(f"Finished links utility")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
     os.system(f"cd /mnt/gentoo && echo 'MAKEOPTS=\"-j{MAKEOPTS_J} -l{MAKEOPTS_L}\"' >> /etc/portage/make.conf")
     print("MAKEOPTS set up.")
     os.system("cd /mnt/gentoo && cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
-    print("Successfully copied [etc/resol.conf] to [/mnt/gentoo/etc]")
-    # os.system("cd /mnt/gentoo && mv in_chroot.py /mnt/gentoo/ && arch-chroot /mnt/gentoo python in_chroot.py")
+    print("Successfully copied [etc/resolv.conf] to [/mnt/gentoo/etc]")
+    os.system("cd /mnt/gentoo && mv in_chroot.py /mnt/gentoo/ && move modules.py /mnt/gentoo && arch-chroot /mnt/gentoo python in_chroot.py")
     # print("Chroot successful!")
 
 
-    # Move the file from current dir into /mnt/gentoo/root
-    os.system("mv in_chroot.py /mnt/gentoo/root/")
-    os.system("mv modules.py /mnt/gentoo/root/")
-    # os.system("mv config.jsonc /mnt/gentoo/root/")
+    # # Move the file from current dir into /mnt/gentoo/root
+    # os.system("mv in_chroot.py /mnt/gentoo/root/")
+    # os.system("mv modules.py /mnt/gentoo/root/")
+    # # os.system("mv config.jsonc /mnt/gentoo/root/")
 
-    # Run inside chroot
-    os.system("arch-chroot /mnt python /root/in_chroot.py")
+    # # Run inside chroot
+    # os.system("arch-chroot /mnt/gentoo python /root/in_chroot.py")
+
     print("Chroot successful!")
 
 MOUNT()
