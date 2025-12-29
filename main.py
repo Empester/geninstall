@@ -91,7 +91,7 @@ def MOUNT():
     os.system(f"mount {ROOTPT} /mnt/gentoo")
     print(f"Mounted [{ROOTPT}] to [/mnt/gentoo]")
     print("Latest stage3 profile:", PROFILE)
-    os.system(f"wget -P /mnt/gentoo {PROFILE}")
+    os.system(f"wget -P /mnt/gentoo {BASE_URL}/{PROFILE}")
     print(f"Finished links utility")
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
