@@ -47,7 +47,7 @@ def cfg_set(key, value):
     data[key] = value
     _save(data)
 
-def detect_and_set_locale_os():
+def detect_and_set_locale():
     """Detect and set the locale from eselect."""
     current_locale = cfg_get("LOCALE")
     
