@@ -1,5 +1,35 @@
 import os
 from modules import *
+
+# Color codes for terminal output
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
+def print_success(msg):
+    print(f"{Colors.GREEN}✓ {msg}{Colors.RESET}")
+
+def print_error(msg):
+    print(f"{Colors.RED}✗ ERROR: {msg}{Colors.RESET}")
+
+def print_warning(msg):
+    print(f"{Colors.YELLOW}⚠ WARNING: {msg}{Colors.RESET}")
+
+def print_info(msg):
+    print(f"{Colors.CYAN}ℹ {msg}{Colors.RESET}")
+
+def print_header(msg):
+    print(f"\n{Colors.BOLD}{Colors.BLUE}{'='*70}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}{msg}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}{'='*70}{Colors.RESET}\n")
+
+def print_separator():
+    print(f"{Colors.CYAN}{'-'*70}{Colors.RESET}")
 ROOTPT = cfg_get("ROOTPT")
 EFIPT = cfg_get("EFIPT")
 SWAPPT = cfg_get("SWAPPT")
@@ -55,8 +85,14 @@ hosts = f"""
 
 
 def CRITICALS():
-    os.system("mkdir -p boot/efi")
-    os.system(f"mount {EFIPT} boot/efi")
+    os.system("mkdir -p /boot/efi")
+    # Check if EFI partition is already mounted, if not mount it
+    if not os.path.ismount("/boot/efi"):
+        mount_result = os.system(f"mount -t vfat {EFIPT} /boot/efi")
+        if mount_result != 0:
+            print(f"WARNING: Failed to mount {EFIPT} to /boot/efi, continuing anyway...")
+    else:
+        print("/boot/efi is already mounted")
     print("Syncing the system...")
     os.system("emerge-webrsync")
     os.system("emerge -q --oneshot app-portage/mirrorselect")
@@ -271,11 +307,19 @@ def CRITICALS():
     echo 'GRUB_PLATFORMS="efi-64"' >> /etc/portage/make.conf
     """)
     os.system("emerge --verbose sys-boot/grub")
-    os.system(f"mount {EFIPT} /boot/efi")
+    # Ensure EFI partition is mounted (it should already be from earlier)
+    if not os.path.ismount("/boot/efi"):
+        mount_result = os.system(f"mount -t vfat {EFIPT} /boot/efi")
+        if mount_result != 0:
+            print(f"ERROR: Failed to mount {EFIPT} to /boot/efi for GRUB installation")
     os.system("grub-install --efi-directory=/boot/efi")
     os.system("mkdir -p /boot/efi/grub")
     os.system("grub-mkconfig -o /boot/efi/grub/grub.cfg")
-    os.system("mount -o remount,rw /")
+    # Remount root as read-write if it became read-only (check and fix)
+    remount_result = os.system("mount -o remount,rw / 2>/dev/null")
+    if remount_result != 0:
+        print("WARNING: Could not remount root as read-write. This may indicate filesystem errors.")
+        print("After exiting chroot, you may need to run: fsck -y <root-partition>")
     print("Installation finished. Exiting chroot...")
     print("Done! You may reboot now.")
     os.system("exit")
