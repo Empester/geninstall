@@ -91,6 +91,16 @@ def require_root():
         print("This script must be run as root.")
         sys.exit(1)
 
+def is_partition_formatted(device):
+    """Check if a partition is formatted as ext4"""
+    # Use blkid to check filesystem type
+    result = os.system(f"blkid -s TYPE -o value {device} > /dev/null 2>&1")
+    if result == 0:
+        # Get the filesystem type
+        fs_type = os.popen(f"blkid -s TYPE -o value {device}").read().strip()
+        return fs_type == "ext4"
+    return False
+
 def MOUNT():
     os.system("mkdir -p /mnt/gentoo")
     print("Made parent directory: [/mnt/gentoo]")
@@ -114,6 +124,8 @@ def MOUNT():
     os.system(f"cd /mnt/gentoo && tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner")
     print("Checking the content of the tarball.... finished")
     # Fix: Use relative path after cd, or absolute path to mounted partition
+    # Ensure portage directory exists before writing
+    os.system("mkdir -p /mnt/gentoo/etc/portage")
     os.system(f"cd /mnt/gentoo && echo 'MAKEOPTS=\"-j{MAKEOPTS_J} -l{MAKEOPTS_L}\"' >> etc/portage/make.conf")
     print("MAKEOPTS set up.")
     os.system("cp --dereference /etc/resolv.conf /mnt/gentoo/etc/")
@@ -134,5 +146,14 @@ def MOUNT():
     print("Chroot successful!")
 
 require_root()
+
+# Check if partition is formatted, if not, format it
+if not is_partition_formatted(ROOTPT):
+    print(f"Partition {ROOTPT} is not formatted as ext4.")
+    print("Formatting partitions...")
+    partition()
+else:
+    print(f"Partition {ROOTPT} is already formatted as ext4.")
+
 MOUNT()
 
